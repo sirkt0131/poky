@@ -736,6 +736,7 @@ def movefile(src, dest, newmtime = None, sstat = None):
     filesystems.  Returns true on success and false on failure. Move is
     atomic.
     """
+    import shutil
 
     #print "movefile(" + src + "," + dest + "," + str(newmtime) + "," + str(sstat) + ")"
     try:
@@ -782,7 +783,10 @@ def movefile(src, dest, newmtime = None, sstat = None):
 
     if sstat[stat.ST_DEV] == dstat[stat.ST_DEV]:
         try:
-            os.rename(src, destpath)
+            try:
+                os.rename(src, destpath)
+            except OSError:
+                shutil.move(src, destpath)
             renamefailed = 0
         except Exception as e:
             if e.errno != errno.EXDEV:
@@ -796,7 +800,10 @@ def movefile(src, dest, newmtime = None, sstat = None):
         if stat.S_ISREG(sstat[stat.ST_MODE]):
             try: # For safety copy then move it over.
                 shutil.copyfile(src, destpath + "#new")
-                os.rename(destpath + "#new", destpath)
+                try:
+                    os.rename(destpath + "#new", destpath)
+                except OSError:
+                    shutil.move(destpath + "#new", destpath)
                 didcopy = 1
             except Exception as e:
                 print('movefile: copy', src, '->', dest, 'failed.', e)
@@ -874,7 +881,10 @@ def copyfile(src, dest, newmtime = None, sstat = None):
 
             # For safety copy then move it over.
             shutil.copyfile(src, dest + "#new")
-            os.rename(dest + "#new", dest)
+            try:
+                os.rename(dest + "#new", dest)
+            except OSError:
+                shutil.move(dest + "#new", dest)
         except Exception as e:
             logger.warning("copyfile: copy %s to %s failed (%s)" % (src, dest, e))
             return False

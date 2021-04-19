@@ -341,6 +341,7 @@ class SignatureGeneratorBasic(SignatureGenerator):
         self.unihash_cache.save(self.unitaskhashes)
 
     def dump_sigtask(self, fn, task, stampbase, runtime):
+        import shutil
 
         tid = fn + ":" + task
         referencestamp = stampbase
@@ -402,7 +403,10 @@ class SignatureGeneratorBasic(SignatureGenerator):
                 p = pickle.dump(data, stream, -1)
                 stream.flush()
             os.chmod(tmpfile, 0o664)
-            os.rename(tmpfile, sigfile)
+            try:
+                os.rename(tmpfile, sigfile)
+            except OSError:
+                shutil.move(tmpfile, sigfile)
         except (OSError, IOError) as err:
             try:
                 os.unlink(tmpfile)
