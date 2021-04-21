@@ -736,7 +736,6 @@ def movefile(src, dest, newmtime = None, sstat = None):
     filesystems.  Returns true on success and false on failure. Move is
     atomic.
     """
-    import shutil
 
     #print "movefile(" + src + "," + dest + "," + str(newmtime) + "," + str(sstat) + ")"
     try:
@@ -783,10 +782,7 @@ def movefile(src, dest, newmtime = None, sstat = None):
 
     if sstat[stat.ST_DEV] == dstat[stat.ST_DEV]:
         try:
-            try:
-                os.rename(src, destpath)
-            except OSError:
-                shutil.move(src, destpath)
+            bb.utils.rename(src, destpath)
             renamefailed = 0
         except Exception as e:
             if e.errno != errno.EXDEV:
@@ -800,10 +796,7 @@ def movefile(src, dest, newmtime = None, sstat = None):
         if stat.S_ISREG(sstat[stat.ST_MODE]):
             try: # For safety copy then move it over.
                 shutil.copyfile(src, destpath + "#new")
-                try:
-                    os.rename(destpath + "#new", destpath)
-                except OSError:
-                    shutil.move(destpath + "#new", destpath)
+                bb.utils.rename(destpath + "#new", destpath)
                 didcopy = 1
             except Exception as e:
                 print('movefile: copy', src, '->', dest, 'failed.', e)
@@ -881,10 +874,7 @@ def copyfile(src, dest, newmtime = None, sstat = None):
 
             # For safety copy then move it over.
             shutil.copyfile(src, dest + "#new")
-            try:
-                os.rename(dest + "#new", dest)
-            except OSError:
-                shutil.move(dest + "#new", dest)
+            bb.utils.rename(dest + "#new", dest)
         except Exception as e:
             logger.warning("copyfile: copy %s to %s failed (%s)" % (src, dest, e))
             return False
@@ -1679,3 +1669,15 @@ def is_semver(version):
         return False
 
     return True
+
+# Wrapper around os.rename which can handle cross device problems
+# e.g. from container filesystems
+def rename(src, dst):
+    try:
+        os.rename(src, dst)
+    except OSError as err:
+        if err.errno == 18:
+            # Invalid cross-device link error
+            shutil.move(src, dst)
+        else:
+            raise err

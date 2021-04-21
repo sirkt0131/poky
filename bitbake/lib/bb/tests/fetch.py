@@ -1772,7 +1772,6 @@ class GitShallowTest(FetcherTest):
         self.assertRevCount(1, cwd=os.path.join(self.gitdir, 'gitsubmodule'))
 
     def test_shallow_submodule_mirrors(self):
-        import shutil
         self.add_empty_file('a')
         self.add_empty_file('b')
 
@@ -1799,10 +1798,7 @@ class GitShallowTest(FetcherTest):
 
         # Set up the mirror
         mirrordir = os.path.join(self.tempdir, 'mirror')
-        try:
-            os.rename(self.dldir, mirrordir)
-        except OSError:
-            shutil.move(self.dldir, mirrordir)
+        bb.utils.rename(self.dldir, mirrordir)
         self.d.setVar('PREMIRRORS', 'gitsm://.*/.* file://%s/\n' % mirrordir)
 
         # Fetch from the mirror
@@ -1907,7 +1903,6 @@ class GitShallowTest(FetcherTest):
         assert not os.path.exists(os.path.join(self.gitdir, '.git', 'shallow'))
 
     def test_shallow_mirrors(self):
-        import shutil
         self.add_empty_file('a')
         self.add_empty_file('b')
 
@@ -1921,11 +1916,7 @@ class GitShallowTest(FetcherTest):
         bb.utils.mkdirhier(mirrordir)
         self.d.setVar('PREMIRRORS', 'git://.*/.* file://%s/\n' % mirrordir)
 
-        try:
-            os.rename(os.path.join(self.dldir, mirrortarball),
-                  os.path.join(mirrordir, mirrortarball))
-        except OSError:
-            shutil.move(os.path.join(self.dldir, mirrortarball),
+        bb.utils.rename(os.path.join(self.dldir, mirrortarball),
                   os.path.join(mirrordir, mirrortarball))
 
         # Fetch from the mirror
